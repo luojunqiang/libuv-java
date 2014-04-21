@@ -34,6 +34,8 @@ import org.testng.annotations.Test;
 import com.oracle.libuv.TestBase;
 import com.oracle.libuv.cb.TimerCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class TimerHandleTest extends TestBase {
 
     private static final int TIMES = 100;
@@ -43,7 +45,7 @@ public class TimerHandleTest extends TestBase {
         final AtomicBoolean gotCallback = new AtomicBoolean(false);
         final AtomicBoolean gotClose = new AtomicBoolean(false);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final TimerHandle timer = handleFactory.newTimerHandle();
 

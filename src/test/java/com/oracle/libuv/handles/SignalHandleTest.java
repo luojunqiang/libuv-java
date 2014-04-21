@@ -28,6 +28,8 @@ package com.oracle.libuv.handles;
 import com.oracle.libuv.cb.SignalCallback;
 import com.oracle.libuv.TestBase;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class SignalHandleTest extends TestBase {
 
     // this test needs to be run manually, so no @Test annotation
@@ -36,7 +38,7 @@ public class SignalHandleTest extends TestBase {
             System.err.println("Sorry this test does not work on windows");
             return;
         }
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final SignalHandle handle = handleFactory.newSignalHandle();
         handle.setSignalCallback(new SignalCallback() {

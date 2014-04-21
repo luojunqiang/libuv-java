@@ -34,6 +34,8 @@ import org.testng.annotations.Test;
 import com.oracle.libuv.cb.IdleCallback;
 import com.oracle.libuv.TestBase;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class IdleHandleTest extends TestBase {
 
     @Test
@@ -42,7 +44,7 @@ public class IdleHandleTest extends TestBase {
         final AtomicBoolean gotClose = new AtomicBoolean(false);
         final AtomicInteger times = new AtomicInteger(0);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final IdleHandle idleHandle = handleFactory.newIdleHandle();
 

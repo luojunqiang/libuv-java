@@ -59,6 +59,8 @@ import com.oracle.libuv.TestBase;
 import com.oracle.libuv.handles.*;
 import com.oracle.libuv.runner.TestRunner;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 /**
  * Test LibUV permissions. This test doesn't rely on a policy file. Permissions
  * are configured in each test.
@@ -197,14 +199,14 @@ public class PermissionTest extends TestBase {
 
     @Test
     public void testHandlesNoAuth() {
-        final HandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
 
         init(new Permissions());
 
         testFailure(new Runnable() {
             @Override
             public void run() {
-                handleFactory.newFactory();
+                newFactory();
             }
         });
 
@@ -283,7 +285,7 @@ public class PermissionTest extends TestBase {
 
         init(permissions);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final PipeHandle client = handleFactory.newPipeHandle(false);
         final PipeHandle server = handleFactory.newPipeHandle(false);
@@ -355,7 +357,7 @@ public class PermissionTest extends TestBase {
 
         init(permissions);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final ProcessHandle process = handleFactory.newProcessHandle();
 
         final String[] args = new String[2];
@@ -407,7 +409,7 @@ public class PermissionTest extends TestBase {
 
         init(permissions);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final TCPHandle server = handleFactory.newTCPHandle();
         final TCPHandle client = handleFactory.newTCPHandle();
@@ -472,7 +474,7 @@ public class PermissionTest extends TestBase {
 
     @Test
     public void testConnection6Auth() throws Throwable {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         if (!UDPHandleTest.isIPv6Enabled(loop)) {
             return;
@@ -564,7 +566,7 @@ public class PermissionTest extends TestBase {
 
         init(permissions);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final SignalHandle sh = handleFactory.newSignalHandle();
 
         testSuccess(new Runnable() {
@@ -623,7 +625,7 @@ public class PermissionTest extends TestBase {
         f.createNewFile();
 
         init(permissions);
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final Files handle = handleFactory.newFiles();
         final int fd = handle.open(fileName, Constants.O_RDONLY, Constants.S_IRWXU);
 
@@ -705,7 +707,7 @@ public class PermissionTest extends TestBase {
         final File f = new File(fileName);
         f.createNewFile();
         // Emulate codebase with the rights to open in R/W
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final Files handle = handleFactory.newFiles();
         final int fd = handle.open(fileName, Constants.O_RDWR, Constants.S_IRWXU);
 
@@ -747,7 +749,7 @@ public class PermissionTest extends TestBase {
         final Permissions permissions = new Permissions();
         permissions.add(new LibUVPermission("libuv.handle"));
         init(permissions);
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final Files handle = handleFactory.newFiles();
         final String fileName = "testFileNoAuth.txt";
         testFailure(new Runnable() {

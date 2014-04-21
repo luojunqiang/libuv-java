@@ -40,6 +40,8 @@ import com.oracle.libuv.cb.StreamConnectCallback;
 import com.oracle.libuv.cb.StreamConnectionCallback;
 import com.oracle.libuv.cb.StreamReadCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class TCPHandleTest extends TestBase {
 
     private static final String ADDRESS = "127.0.0.1";
@@ -59,7 +61,7 @@ public class TCPHandleTest extends TestBase {
         final AtomicBoolean serverDone = new AtomicBoolean(false);
         final AtomicBoolean clientDone = new AtomicBoolean(false);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final TCPHandle server = handleFactory.newTCPHandle();
         final TCPHandle peer = handleFactory.newTCPHandle();

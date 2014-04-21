@@ -37,6 +37,8 @@ import org.testng.annotations.Test;
 import com.oracle.libuv.TestBase;
 import com.oracle.libuv.cb.AsyncCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class AsyncHandleTest extends TestBase {
 
     @Test
@@ -44,7 +46,7 @@ public class AsyncHandleTest extends TestBase {
         final AtomicBoolean gotCallback = new AtomicBoolean(false);
         final AtomicInteger times = new AtomicInteger(0);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final AsyncHandle asyncHandle = handleFactory.newAsyncHandle();
         final ScheduledExecutorService timer = new ScheduledThreadPoolExecutor(1);

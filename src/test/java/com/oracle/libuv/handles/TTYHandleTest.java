@@ -35,6 +35,8 @@ import com.oracle.libuv.TestBase;
 import com.oracle.libuv.cb.StreamReadCallback;
 import com.oracle.libuv.cb.StreamWriteCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class TTYHandleTest extends TestBase {
 
     private TTYHandle newTTY(final HandleFactory factory, final int fd, final boolean readable) {
@@ -63,7 +65,7 @@ public class TTYHandleTest extends TestBase {
     }
 
     private void testStdOutErrWindowSize(final String name, final int fd) {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final TTYHandle tty = newTTY(handleFactory, fd, false);
         if (tty == null) {
             return;
@@ -73,7 +75,7 @@ public class TTYHandleTest extends TestBase {
 
     @Test
     public void testStdinWindowSize() {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final TTYHandle tty = newTTY(handleFactory, 0, true);
         if (tty == null) {
             return;
@@ -99,7 +101,7 @@ public class TTYHandleTest extends TestBase {
     }
 
     private void testWrite(final String name, final int fd) throws Throwable {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final TTYHandle tty = newTTY(handleFactory, fd, false);
         if (tty == null) {
@@ -119,7 +121,7 @@ public class TTYHandleTest extends TestBase {
 
     @Test
     public void testRead() throws Throwable {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final TTYHandle tty = newTTY(handleFactory, 0, true);
         if (tty == null) {

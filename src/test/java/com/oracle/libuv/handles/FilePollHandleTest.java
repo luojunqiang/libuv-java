@@ -24,6 +24,15 @@
  */
 package com.oracle.libuv.handles;
 
+import java.io.File;
+import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.oracle.libuv.Constants;
 import com.oracle.libuv.Files;
 import com.oracle.libuv.Stats;
@@ -32,14 +41,7 @@ import com.oracle.libuv.cb.FileOpenCallback;
 import com.oracle.libuv.cb.FilePollCallback;
 import com.oracle.libuv.cb.FilePollStopCallback;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.io.File;
-import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
 
 public class FilePollHandleTest extends TestBase {
 
@@ -56,7 +58,7 @@ public class FilePollHandleTest extends TestBase {
         final AtomicBoolean gotStop = new AtomicBoolean(false);
         final AtomicInteger times = new AtomicInteger(0);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final Files handle = handleFactory.newFiles();
         final FilePollHandle pollHandle = new FilePollHandle(loop);

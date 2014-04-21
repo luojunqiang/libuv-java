@@ -35,13 +35,23 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.oracle.libuv.Constants;
-import com.oracle.libuv.cb.FileEventCallback;
 import com.oracle.libuv.Files;
 import com.oracle.libuv.TestBase;
+import com.oracle.libuv.cb.FileEventCallback;
+
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
 
 public class FileEventHandleTest extends TestBase {
 
     private String testName;
+
+    private boolean shouldSkip() {
+        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+            System.out.println("WARNING: skipping " + testName + "() since test does not work on Mac ");
+            return true;
+        }
+        return false;
+    }
 
     @BeforeMethod
     public void startSession(final Method method) throws Exception {
@@ -50,11 +60,13 @@ public class FileEventHandleTest extends TestBase {
 
     @Test
     public void testFileChangeEvent() throws Throwable {
+        if (shouldSkip()) return;
+
         final AtomicBoolean gotCallback = new AtomicBoolean(false);
         final AtomicBoolean gotClose = new AtomicBoolean(false);
         final AtomicInteger times = new AtomicInteger(0);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final Files handle = handleFactory.newFiles();
         final FileEventHandle eventHandle = new FileEventHandle(loop);
@@ -100,12 +112,13 @@ public class FileEventHandleTest extends TestBase {
 
     @Test
     public void testFileRenameEvent() throws Throwable {
+        if (shouldSkip()) return;
         final String newName = testName + "_new";
         final AtomicBoolean gotCallback = new AtomicBoolean(false);
         final AtomicBoolean gotClose = new AtomicBoolean(false);
         final AtomicInteger times = new AtomicInteger(0);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final Files handle = handleFactory.newFiles();
         final FileEventHandle eventHandle = new FileEventHandle(loop);

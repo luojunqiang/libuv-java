@@ -37,6 +37,8 @@ import com.oracle.libuv.TestBase;
 import com.oracle.libuv.cb.UDPRecvCallback;
 import com.oracle.libuv.cb.UDPSendCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class UDPHandleTest extends TestBase {
 
     private static final String HOST = "127.0.0.1";
@@ -53,7 +55,7 @@ public class UDPHandleTest extends TestBase {
         final AtomicBoolean serverDone = new AtomicBoolean(false);
         final AtomicBoolean clientDone = new AtomicBoolean(false);
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final UDPHandle server = handleFactory.newUDPHandle();
         final UDPHandle client = handleFactory.newUDPHandle();
@@ -101,7 +103,7 @@ public class UDPHandleTest extends TestBase {
 
     @Test
     public void testConnection6() throws Throwable {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         if (!isIPv6Enabled(loop)) {
             return;

@@ -26,19 +26,12 @@
 package com.oracle.libuv.handles;
 
 import com.oracle.libuv.Files;
-import com.oracle.libuv.cb.CallbackExceptionHandler;
-import com.oracle.libuv.cb.CallbackHandlerFactory;
-import com.oracle.libuv.cb.ContextProvider;
 
 public interface HandleFactory {
 
+    HandleFactory initialize(final LoopHandle loop);
+
     LoopHandle getLoopHandle();
-
-    HandleFactory newFactory();
-
-    HandleFactory newFactory(CallbackExceptionHandler exceptionHandler,
-                             CallbackHandlerFactory callbackHandler,
-                             ContextProvider contextProvider);
 
     AsyncHandle newAsyncHandle();
 
@@ -67,8 +60,7 @@ public interface HandleFactory {
 
     TimerHandle newTimerHandle();
 
-    TTYHandle newTTYHandle(int fd,
-                           boolean readable);
+    TTYHandle newTTYHandle(int fd, boolean readable);
 
     UDPHandle newUDPHandle();
 
@@ -81,5 +73,4 @@ public interface HandleFactory {
     FilePollHandle newFilePollHandle();
 
     Files newFiles();
-
 }

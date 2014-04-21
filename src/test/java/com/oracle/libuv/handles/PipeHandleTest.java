@@ -41,6 +41,8 @@ import com.oracle.libuv.cb.StreamConnectCallback;
 import com.oracle.libuv.cb.StreamConnectionCallback;
 import com.oracle.libuv.cb.StreamReadCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class PipeHandleTest extends TestBase {
 
     private static final String OS = System.getProperty("os.name");
@@ -68,7 +70,7 @@ public class PipeHandleTest extends TestBase {
         final Logger serverLoggingCallback = new Logger("S: ");
         final Logger clientLoggingCallback = new Logger("C: ");
 
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final PipeHandle server = handleFactory.newPipeHandle(false);
         final PipeHandle peer = handleFactory.newPipeHandle(false);

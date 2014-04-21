@@ -41,6 +41,8 @@ import com.oracle.libuv.cb.StreamConnectCallback;
 import com.oracle.libuv.cb.StreamConnectionCallback;
 import com.oracle.libuv.cb.StreamReadCallback;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class ProcessHandleTest extends TestBase {
 
     private static final String OS = System.getProperty("os.name");
@@ -58,7 +60,7 @@ public class ProcessHandleTest extends TestBase {
 
         final AtomicBoolean exitCalled = new AtomicBoolean(false);
         final AtomicBoolean closeCalled = new AtomicBoolean(false);
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final ProcessHandle process = handleFactory.newProcessHandle();
         final PipeHandle parent = handleFactory.newPipeHandle(false);

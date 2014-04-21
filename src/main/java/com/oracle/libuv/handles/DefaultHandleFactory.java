@@ -26,39 +26,25 @@
 package com.oracle.libuv.handles;
 
 import com.oracle.libuv.Files;
-import com.oracle.libuv.cb.CallbackExceptionHandler;
-import com.oracle.libuv.cb.CallbackHandlerFactory;
-import com.oracle.libuv.cb.ContextProvider;
 
 public class DefaultHandleFactory implements HandleFactory {
 
-    protected final LoopHandle loop;
+    private LoopHandle loop;
 
-    public DefaultHandleFactory() {
-        this.loop = new LoopHandle();
+    public static HandleFactory newFactory() { // generally only for tests
+        return new DefaultHandleFactory().initialize(new LoopHandle());
     }
 
-    public DefaultHandleFactory(final CallbackExceptionHandler exceptionHandler,
-                                final CallbackHandlerFactory callbackHandler,
-                                final ContextProvider contextProvider) {
-        this.loop = new LoopHandle(exceptionHandler, callbackHandler, contextProvider);
+    @Override
+    public HandleFactory initialize(final LoopHandle loop) {
+        if (this.loop != null) throw new IllegalStateException("already initialized");
+        this.loop = loop;
+        return this;
     }
 
     @Override
     public LoopHandle getLoopHandle() {
         return loop;
-    }
-
-    @Override
-    public HandleFactory newFactory() {
-        return new DefaultHandleFactory();
-    }
-
-    @Override
-    public HandleFactory newFactory(final CallbackExceptionHandler exceptionHandler,
-                                    final CallbackHandlerFactory callbackHandler,
-                                    final ContextProvider contextProvider) {
-        return new DefaultHandleFactory(exceptionHandler, callbackHandler, contextProvider);
     }
 
     @Override
@@ -168,5 +154,4 @@ public class DefaultHandleFactory implements HandleFactory {
             super(loop);
         }
     }
-
 }

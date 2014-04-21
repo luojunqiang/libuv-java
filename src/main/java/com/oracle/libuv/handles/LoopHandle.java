@@ -72,9 +72,9 @@ public class LoopHandle implements Closeable {
         LibUVPermission.checkNewLoop(createdLoopCount);
     }
 
-    protected LoopHandle(final CallbackExceptionHandler exceptionHandler,
-                         final CallbackHandlerFactory callbackHandler,
-                         final ContextProvider contextProvider) {
+    public LoopHandle(final CallbackExceptionHandler exceptionHandler,
+                      final CallbackHandlerFactory callbackHandler,
+                      final ContextProvider contextProvider) {
         newLoop();
         this.pointer = _new();
         assert pointer != 0;
@@ -85,7 +85,7 @@ public class LoopHandle implements Closeable {
         closed = false;
     }
 
-    protected LoopHandle() {
+    public LoopHandle() {
         newLoop();
         this.pointer = _new();
         assert pointer != 0;
@@ -205,5 +205,4 @@ public class LoopHandle implements Closeable {
     private native String[] _list(final long ptr);
 
     private native NativeException _get_last_error(final long ptr);
-
 }

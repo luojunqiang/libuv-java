@@ -36,21 +36,22 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.oracle.libuv.Files.OpenedFile;
 import com.oracle.libuv.cb.FileCallback;
 import com.oracle.libuv.cb.FileCloseCallback;
 import com.oracle.libuv.cb.FileOpenCallback;
 import com.oracle.libuv.cb.FileReadCallback;
 import com.oracle.libuv.cb.FileReadDirCallback;
-import com.oracle.libuv.Files.OpenedFile;
 import com.oracle.libuv.cb.FileWriteCallback;
-import com.oracle.libuv.handles.DefaultHandleFactory;
 import com.oracle.libuv.handles.HandleFactory;
 import com.oracle.libuv.handles.LoopHandle;
 import com.oracle.libuv.runner.TestRunner;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class FilesTest extends TestBase {
 
-    private final HandleFactory handleFactory = new DefaultHandleFactory();
+    private final HandleFactory handleFactory = newFactory();
 
     private String testName;
 

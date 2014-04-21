@@ -33,13 +33,15 @@ import org.testng.annotations.Test;
 
 import com.oracle.libuv.TestBase;
 
+import static com.oracle.libuv.handles.DefaultHandleFactory.newFactory;
+
 public class LoopHandleTest extends TestBase {
 
     private static final String DOT_SPLIT_REGEX = "\\.";
 
     @Test
     public void testList() throws Throwable {
-        final DefaultHandleFactory handleFactory = new DefaultHandleFactory();
+        final HandleFactory handleFactory = newFactory();
         final LoopHandle loop = handleFactory.getLoopHandle();
         final String[] handles = loop.list();
         Assert.assertNotNull(handles);
