@@ -194,43 +194,43 @@ class StreamHandle extends Handle {
         super.finalize();
     }
 
-    private void callRead(final ByteBuffer data) {
+    protected void callRead(final ByteBuffer data) {
         if (onRead != null) {
             loop.getCallbackHandler().handleStreamReadCallback(onRead, data);
         }
     }
 
-    private void callRead2(final ByteBuffer data, long handle, int type) {
+    protected void callRead2(final ByteBuffer data, long handle, int type) {
         if (onRead2 != null) {
             loop.getCallbackHandler().handleStreamRead2Callback(onRead2, data, handle, type);
         }
     }
 
-    private void callWrite(final int status, final Exception error, final Object context) {
+    protected void callWrite(final int status, final Exception error, final Object context) {
         if (onWrite != null) {
             loop.getCallbackHandler(context).handleStreamWriteCallback(onWrite, status, error);
         }
     }
 
-    private void callConnect(final int status, final Exception error, final Object context) {
+    protected void callConnect(final int status, final Exception error, final Object context) {
         if (onConnect != null) {
             loop.getCallbackHandler(context).handleStreamConnectCallback(onConnect, status, error);
         }
     }
 
-    private void callConnection(final int status, final Exception error) {
+    protected void callConnection(final int status, final Exception error) {
         if (onConnection != null) {
             loop.getCallbackHandler().handleStreamConnectionCallback(onConnection, status, error);
         }
     }
 
-    private void callClose() {
+    protected void callClose() {
         if (onClose != null) {
             loop.getCallbackHandler().handleStreamCloseCallback(onClose);
         }
     }
 
-    private void callShutdown(final int status, final Exception error, final Object context) {
+    protected void callShutdown(final int status, final Exception error, final Object context) {
         if (onShutdown != null) {
             loop.getCallbackHandler(context).handleStreamShutdownCallback(onShutdown, status, error);
         }
