@@ -123,18 +123,25 @@ class StreamHandle extends Handle {
 
     public int write(final String str) {
         Objects.requireNonNull(str);
-        final byte[] data;
         try {
-            data = str.getBytes("utf-8");
+            return write(str, "utf-8");
         } catch (final UnsupportedEncodingException e) {
             throw new RuntimeException(e); // "utf-8" is always supported
         }
-        return write(ByteBuffer.wrap(data), 0, data.length);
     }
 
     public int write(final String str, final String encoding) throws UnsupportedEncodingException {
         Objects.requireNonNull(str);
         final byte[] data = str.getBytes(encoding);
+        return write(ByteBuffer.wrap(data), 0, data.length);
+    }
+
+    @SuppressWarnings("deprecation")
+    public int writeLowerBytes(final String str) {
+        Objects.requireNonNull(str);
+        final byte[] data = new byte[str.length()];
+        // use deprecated (but fast) method to get lower bytes of str chars
+        str.getBytes(0, data.length, data, 0);
         return write(ByteBuffer.wrap(data), 0, data.length);
     }
 
