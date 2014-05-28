@@ -29,23 +29,49 @@
 
 #include "context.h"
 
- ContextHolder::ContextHolder(JNIEnv* env, jobject data, jobject context) {
+ContextHolder::ContextHolder(JNIEnv* env, jobject data, jobject context) {
   _data = data ? (jobject) env->NewGlobalRef(data) : NULL;
   _env = env;
   _context = context ? (jobject) env->NewGlobalRef(context) : NULL;
- }
+  _elements = NULL;
+  _bases = NULL;
+}
 
- ContextHolder::ContextHolder(JNIEnv* env, jobject context) {
+ContextHolder::ContextHolder(JNIEnv* env, jobject context) {
   _data = NULL;
   _env = env;
   _context = context ? (jobject) env->NewGlobalRef(context) : NULL;
- }
+  _elements = NULL;
+  _bases = NULL;
+}
 
- ContextHolder::~ContextHolder() {
+void ContextHolder::set_elements(jobject* elements, jbyte** bases, int count) {
+  assert(elements);
+  assert(bases);
+  assert(count > 0);
+
+  _element_count = count;
+  _elements = new jobject[count];
+  _bases = new jbyte*[count];
+  for (int i=0; i < count; i++) {
+    _elements[i] = (jobject) _env->NewGlobalRef(elements[i]);
+    _bases[i] = bases[i];
+  }
+}
+
+ContextHolder::~ContextHolder() {
   if (_context) {
-   _env->DeleteGlobalRef(_context);
+    _env->DeleteGlobalRef(_context);
   }
   if (_data) {
-   _env->DeleteGlobalRef(_data);
+    _env->DeleteGlobalRef(_data);
   }
- }
+  if (_elements && _bases && _element_count > 0) {
+    for (int i=0; i < _element_count; i++) {
+      _env->ReleaseByteArrayElements((jbyteArray) _elements[i], (jbyte*) _bases[i], JNI_ABORT);
+      _env->DeleteGlobalRef(_elements[i]);
+    }
+    delete _bases;
+    delete _elements;
+  }
+}

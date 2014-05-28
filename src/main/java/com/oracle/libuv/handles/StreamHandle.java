@@ -27,8 +27,10 @@ package com.oracle.libuv.handles;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Deque;
 import java.util.Objects;
 
+import com.oracle.libuv.StringUtils;
 import com.oracle.libuv.cb.StreamCloseCallback;
 import com.oracle.libuv.cb.StreamConnectCallback;
 import com.oracle.libuv.cb.StreamConnectionCallback;
@@ -37,18 +39,20 @@ import com.oracle.libuv.cb.StreamReadCallback;
 import com.oracle.libuv.cb.StreamShutdownCallback;
 import com.oracle.libuv.cb.StreamWriteCallback;
 
+import jdk.nashorn.internal.runtime.ConsString;
+
 class StreamHandle extends Handle {
 
     protected boolean closed;
-    private boolean readStarted;
+    protected boolean readStarted;
 
-    private StreamReadCallback onRead = null;
-    private StreamRead2Callback onRead2 = null;
-    private StreamWriteCallback onWrite = null;
-    private StreamConnectCallback onConnect = null;
-    private StreamConnectionCallback onConnection = null;
-    private StreamCloseCallback onClose = null;
-    private StreamShutdownCallback onShutdown = null;
+    protected StreamReadCallback onRead = null;
+    protected StreamRead2Callback onRead2 = null;
+    protected StreamWriteCallback onWrite = null;
+    protected StreamConnectCallback onConnect = null;
+    protected StreamConnectionCallback onConnection = null;
+    protected StreamCloseCallback onClose = null;
+    protected StreamShutdownCallback onShutdown = null;
 
     static {
         _static_initialize();
@@ -119,6 +123,36 @@ class StreamHandle extends Handle {
             throw new RuntimeException(e); // "utf-8" is always supported
         }
         return _write2(pointer, ByteBuffer.wrap(data), data, 0, data.length, handle.pointer, loop.getContext());
+    }
+
+    public int write(final ConsString cs) {
+        try {
+            return write(cs.toString(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // "utf-8" is always supported
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public int write(final ConsString cs, final String encoding) throws UnsupportedEncodingException {
+        if (StringUtils.consStringHasLeftRight()) {
+            final Deque<String> parts = StringUtils.parts(cs);
+            parts.offerFirst(cs.toString());
+            final String[] fragments = parts.toArray(new String[parts.size()]);
+            final byte[][] buffers = new byte[fragments.length][];
+            for (int i = 0; i < fragments.length; i++) {
+                if (StringUtils.hasMultiByte(fragments[i], encoding)) {
+                    buffers[i] = fragments[i].getBytes(encoding);
+                } else {
+                    buffers[i] = new byte[fragments[i].length()];
+                    // use deprecated (but fast) method to get lower bytes of str chars
+                    fragments[i].getBytes(0, buffers[i].length, buffers[i], 0);
+                }
+            }
+            return _writev(pointer, buffers, buffers.length, loop.getContext());
+        } else {
+            return write(cs.toString(), encoding); // write after flatten
+        }
     }
 
     public int write(final String str) {
@@ -263,6 +297,11 @@ class StreamHandle extends Handle {
                               final int offset,
                               final int length,
                               final Object context);
+
+    private native int _writev(final long ptr,
+                               final byte[][] buffers,
+                               final int bufcount,
+                               final Object context);
 
     private native int _write2(final long ptr,
                                final ByteBuffer buffer,

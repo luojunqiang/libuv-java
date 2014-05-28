@@ -469,7 +469,7 @@ JNIEXPORT jboolean JNICALL Java_com_oracle_libuv_handles_StreamHandle__1writable
 /*
  * Class:     com_oracle_libuv_handles_StreamHandle
  * Method:    _write
- * Signature: (JLjava/nio/ByteBuffer;[BII)I
+ * Signature: (JLjava/nio/ByteBuffer;[BIILjava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_StreamHandle__1write
   (JNIEnv *env, jobject that, jlong stream, jobject buffer, jbyteArray data, jint offset, jint length, jobject context) {
@@ -499,6 +499,48 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_StreamHandle__1write
     req->data = new ContextHolder(env, buffer, context);
     r = uv_write(req, handle, &buf, 1, _write_cb);
   }
+  if (r) {
+    delete req_data;
+    delete req;
+    ThrowException(env, handle->loop, "uv_write");
+  }
+  return r;
+}
+
+/*
+ * Class:     com_oracle_libuv_handles_StreamHandle
+ * Method:    _writev
+ * Signature: (J[[BILjava/lang/Object;)I
+ */
+JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_StreamHandle__1writev
+  (JNIEnv *env, jobject that, jlong stream, jobjectArray buffers, jint bufcount, jobject context) {
+
+  assert(stream);
+  assert(buffers);
+  assert(bufcount > 0);
+  assert(bufcount == env->GetArrayLength(buffers));
+
+  int r;
+  uv_stream_t* handle = reinterpret_cast<uv_stream_t*>(stream);
+  uv_write_t* req = new uv_write_t();
+  req->handle = handle;
+  ContextHolder* req_data = NULL;
+  jobject elements[bufcount];
+  jbyte* bases[bufcount];
+  uv_buf_t bufs[bufcount];
+  for (int i=0; i < bufcount; i++) {
+    jbyteArray data = (jbyteArray) env->GetObjectArrayElement(buffers, i);
+    jbyte* base = (jbyte*) env->GetByteArrayElements(data, NULL);
+    OOME(env, base);
+    elements[i] = (jobject) data;
+    bases[i] = base;
+    bufs[i].base = reinterpret_cast<char*>(base);
+    bufs[i].len = env->GetArrayLength(data);
+  }
+  req_data = new ContextHolder(env, buffers, context);
+  req_data->set_elements(elements, bases, bufcount); // ContextHolder destructor will release array elements
+  req->data = req_data;
+  r = uv_write(req, handle, bufs, bufcount, _write_cb);
   if (r) {
     delete req_data;
     delete req;
