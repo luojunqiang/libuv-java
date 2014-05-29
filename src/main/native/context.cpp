@@ -33,23 +33,35 @@ ContextHolder::ContextHolder(JNIEnv* env, jobject data, jobject context) {
   _data = data ? (jobject) env->NewGlobalRef(data) : NULL;
   _env = env;
   _context = context ? (jobject) env->NewGlobalRef(context) : NULL;
+  _buffers = NULL;
   _elements = NULL;
   _bases = NULL;
+  _element_count = 0;
 }
 
 ContextHolder::ContextHolder(JNIEnv* env, jobject context) {
   _data = NULL;
   _env = env;
   _context = context ? (jobject) env->NewGlobalRef(context) : NULL;
+  _buffers = NULL;
   _elements = NULL;
   _bases = NULL;
+  _element_count = 0;
 }
 
-void ContextHolder::set_elements(jobject* elements, jbyte** bases, int count) {
+void ContextHolder::set_elements(jobjectArray buffers, jobject* elements, jbyte** bases, int count) {
+  assert(buffers);
   assert(elements);
   assert(bases);
   assert(count > 0);
 
+  // set_elements can only be called once
+  assert(!_buffers);
+  assert(!_elements);
+  assert(!_bases);
+  assert(_element_count == 0);
+
+  _buffers = (jobjectArray) _env->NewGlobalRef(buffers);
   _element_count = count;
   _elements = new jobject[count];
   _bases = new jbyte*[count];
@@ -66,8 +78,9 @@ ContextHolder::~ContextHolder() {
   if (_data) {
     _env->DeleteGlobalRef(_data);
   }
-  if (_elements && _bases && _element_count > 0) {
+  if (_buffers && _elements && _bases && _element_count > 0) {
     for (int i=0; i < _element_count; i++) {
+      _env->DeleteGlobalRef(_buffers);
       _env->ReleaseByteArrayElements((jbyteArray) _elements[i], (jbyte*) _bases[i], JNI_ABORT);
       _env->DeleteGlobalRef(_elements[i]);
     }

@@ -34,6 +34,7 @@ class ContextHolder {
   private:
     jobject _context;
     jobject _data;
+    jobjectArray _buffers;
     jobject* _elements;
     jbyte** _bases;
     int _element_count;
@@ -44,7 +45,7 @@ class ContextHolder {
     inline jobject data() { return _data; }
     ContextHolder(JNIEnv* env, jobject data, jobject context);
     ContextHolder(JNIEnv* env, jobject context);
-    void set_elements(jobject* elements, jbyte** bases, int count);
+    void set_elements(jobjectArray buffers, jobject* elements, jbyte** bases, int count);
     ~ContextHolder();
 };
 

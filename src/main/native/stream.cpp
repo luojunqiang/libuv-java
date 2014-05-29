@@ -538,7 +538,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_StreamHandle__1writev
     bufs[i].len = env->GetArrayLength(data);
   }
   req_data = new ContextHolder(env, buffers, context);
-  req_data->set_elements(elements, bases, bufcount); // ContextHolder destructor will release array elements
+  req_data->set_elements(buffers, elements, bases, bufcount); // ContextHolder destructor will release array elements
   req->data = req_data;
   r = uv_write(req, handle, bufs, bufcount, _write_cb);
   if (r) {
