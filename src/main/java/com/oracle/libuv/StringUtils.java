@@ -88,7 +88,9 @@ public final class StringUtils {
                 cs = (CharSequence) rightMethod.invoke(cons);
             } else {
                 final String str = (String) cs;
-                parts.offerFirst(str);
+                if (str.length() > 0) {
+                    parts.offerFirst(str);
+                }
                 cs = stack.isEmpty() ? null : stack.pollFirst();
             }
         } while (cs != null);
