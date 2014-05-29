@@ -525,9 +525,9 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_StreamHandle__1writev
   uv_write_t* req = new uv_write_t();
   req->handle = handle;
   ContextHolder* req_data = NULL;
-  jobject elements[bufcount];
-  jbyte* bases[bufcount];
-  uv_buf_t bufs[bufcount];
+  jobject* elements = new jobject[bufcount];
+  jbyte** bases = new jbyte*[bufcount];
+  uv_buf_t* bufs = new uv_buf_t[bufcount];
   for (int i=0; i < bufcount; i++) {
     jbyteArray data = (jbyteArray) env->GetObjectArrayElement(buffers, i);
     jbyte* base = (jbyte*) env->GetByteArrayElements(data, NULL);
@@ -541,6 +541,9 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_StreamHandle__1writev
   req_data->set_elements(buffers, elements, bases, bufcount); // ContextHolder destructor will release array elements
   req->data = req_data;
   r = uv_write(req, handle, bufs, bufcount, _write_cb);
+  delete bufs;
+  delete bases;
+  delete elements;
   if (r) {
     delete req_data;
     delete req;
