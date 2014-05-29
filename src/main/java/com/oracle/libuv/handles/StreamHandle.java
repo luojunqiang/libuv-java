@@ -137,7 +137,9 @@ class StreamHandle extends Handle {
     public int write(final ConsString cs, final String encoding) throws UnsupportedEncodingException {
         if (StringUtils.consStringHasLeftRight()) {
             final Deque<String> parts = StringUtils.parts(cs);
-            parts.offerFirst(cs.toString());
+            if (parts.size() == 1) {
+                return write(parts.pollFirst(), encoding);
+            }
             final String[] fragments = parts.toArray(new String[parts.size()]);
             final byte[][] buffers = new byte[fragments.length][];
             for (int i = 0; i < fragments.length; i++) {
