@@ -45,7 +45,9 @@
 class FileCallback;
 
 class FileRequest {
+
 private:
+  const char* _syscall;
   FileCallback* _file_callback;
   jobject _buffer;
   jbyteArray _data;
@@ -56,14 +58,18 @@ private:
   jstring _path;
   jobject _context;
   jint _flags;
+
+  void init(const char* syscall, FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context);
+
 public:
-  FileRequest(FileCallback* ptr, jobject callback, jint fd, jstring path, jobject context);
-  FileRequest(FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context);
+  FileRequest(const char* syscall, FileCallback* ptr, jobject callback, jint fd, jstring path, jobject context);
+  FileRequest(const char* syscall, FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context);
   ~FileRequest();
 
-  void init(FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context);
   void get_bytes(jobject buffer, jbyteArray data, jsize offset, jsize length);
   void set_bytes(jint length);
+
+  const char* syscall() { return _syscall; }
 
   FileCallback* file_callback() { return _file_callback; }
 
@@ -133,15 +139,16 @@ jmethodID FileCallback::_utime_callback_mid = NULL;
 jmethodID FileCallback::_write_callback_mid = NULL;
 jmethodID FileCallback::_stats_init_mid = NULL;
 
-FileRequest::FileRequest(FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context) {
-  init(ptr, callback, fd, path, flags, context);
+FileRequest::FileRequest(const char* syscall, FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context) {
+  init(syscall, ptr, callback, fd, path, flags, context);
 }
 
-FileRequest::FileRequest(FileCallback* ptr, jobject callback, jint fd, jstring path, jobject context) {
-  init(ptr, callback, fd, path, 0, context);
+FileRequest::FileRequest(const char* syscall, FileCallback* ptr, jobject callback, jint fd, jstring path, jobject context) {
+  init(syscall, ptr, callback, fd, path, 0, context);
 }
 
-void FileRequest::init(FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context) {
+void FileRequest::init(const char* syscall, FileCallback* ptr, jobject callback, jint fd, jstring path, jint flags, jobject context) {
+  _syscall = syscall;
   _file_callback = ptr;
   _callback = callback ? _file_callback->env()->NewGlobalRef(callback) : NULL;
   _fd = fd;
@@ -423,9 +430,9 @@ void FileCallback::fs_cb(FileRequest* request, uv_fs_type fs_type, const char* t
 
   if ((errorno == UV_EEXIST || errorno == UV_ENOTEMPTY || errorno == UV_EPERM) && path) {
     cpath = _env->GetStringUTFChars(path, 0);
-    exception = NewException(_env, errorno, NULL, NULL, cpath);
+    exception = NewException(_env, errorno, request->syscall(), NULL, cpath);
   } else {
-    exception = NewException(_env, errorno, NULL, NULL, target_path);
+    exception = NewException(_env, errorno, request->syscall(), NULL, target_path);
   }
 
   switch (fs_type) {
@@ -639,14 +646,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1close__JILjava_lang_Object_
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("close", cb, callback, fd, NULL, context);
     r = uv_fs_close(cb->loop(), req, fd, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_close(cb->loop(), &req, fd, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_close");
+      ThrowException(env, uv_last_error(cb->loop()).code, "close");
     }
   }
   return r;
@@ -667,14 +674,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1open
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, flags, context);
+    req->data = new FileRequest("open", cb, callback, 0, path, flags, context);
     fd = uv_fs_open(cb->loop(), req, cpath, flags, mode, _fs_cb);
   } else {
     uv_fs_t req;
     fd = uv_fs_open(cb->loop(), &req, cpath, flags, mode, NULL);
     uv_fs_req_cleanup(&req);
     if (fd == -1) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_open", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "open", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -695,7 +702,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1read
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    FileRequest* request = new FileRequest(cb, callback, fd, NULL, context);
+    FileRequest* request = new FileRequest("read", cb, callback, fd, NULL, context);
     request->get_bytes(buffer, data, static_cast<jsize>(offset), static_cast<jsize>(length));
     req->data = request;
     jbyte* base = request->bytes();
@@ -713,7 +720,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1read
     }
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_read");
+      ThrowException(env, uv_last_error(cb->loop()).code, "read");
     }
   }
   return r;
@@ -734,14 +741,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1unlink
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("unlink", cb, callback, 0, path, context);
     r = uv_fs_unlink(cb->loop(), req, cpath, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_unlink(cb->loop(), &req, cpath, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_unlink", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "unlink", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -762,7 +769,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1write
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("write", cb, callback, fd, NULL, context);
     if (data) {
       jbyte* base = (jbyte*) env->GetPrimitiveArrayCritical(data, NULL);
       OOME(env, base);
@@ -785,7 +792,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1write
     }
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_write");
+      ThrowException(env, uv_last_error(cb->loop()).code, "write");
     }
   }
   return r;
@@ -806,14 +813,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1mkdir
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("mkdir", cb, callback, 0, path, context);
     r = uv_fs_mkdir(cb->loop(), req, cpath, mode, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_mkdir(cb->loop(), &req, cpath, mode, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_mkdir", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "mkdir", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -835,14 +842,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1rmdir
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("rmdir", cb, callback, 0, path, context);
     r = uv_fs_rmdir(cb->loop(), req, cpath, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_rmdir(cb->loop(), &req, cpath, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_rmdir", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "rmdir", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -864,7 +871,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_oracle_libuv_Files__1readdir
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("readdir", cb, callback, 0, path, context);
     uv_fs_readdir(cb->loop(), req, cpath, flags, _fs_cb);
   } else {
     uv_fs_t req;
@@ -889,7 +896,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_oracle_libuv_Files__1readdir
 #endif
         }
     } else {
-        ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_readdir", NULL, cpath);
+        ThrowException(env, uv_last_error(cb->loop()).code, "readdir", NULL, cpath);
     }
     uv_fs_req_cleanup(&req);
   }
@@ -911,7 +918,7 @@ JNIEXPORT jobject JNICALL Java_com_oracle_libuv_Files__1stat
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("stat", cb, callback, 0, path, context);
     uv_fs_stat(cb->loop(), req, cpath, _fs_cb);
   } else {
     uv_fs_t req;
@@ -919,7 +926,7 @@ JNIEXPORT jobject JNICALL Java_com_oracle_libuv_Files__1stat
     stats = Stats::create(env, static_cast<uv_statbuf_t *>(req.ptr));
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_stat", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "stat", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -940,7 +947,7 @@ JNIEXPORT jobject JNICALL Java_com_oracle_libuv_Files__1fstat
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("fstat", cb, callback, fd, NULL, context);
     uv_fs_fstat(cb->loop(), req, fd, _fs_cb);
   } else {
     uv_fs_t req;
@@ -948,7 +955,7 @@ JNIEXPORT jobject JNICALL Java_com_oracle_libuv_Files__1fstat
     stats = Stats::create(env, static_cast<uv_statbuf_t*>(req.ptr));
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_fstat");
+      ThrowException(env, uv_last_error(cb->loop()).code, "fstat");
     }
   }
   return stats;
@@ -970,7 +977,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1rename
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, new_path, context);
+    req->data = new FileRequest("rename", cb, callback, 0, new_path, context);
     r = uv_fs_rename(cb->loop(), req, src_path, dst_path, _fs_cb);
   } else {
     uv_fs_t req;
@@ -980,9 +987,9 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1rename
       int code = uv_last_error(cb->loop()).code;
       if (dst_path != NULL &&
          (code == UV_EEXIST || code == UV_ENOTEMPTY || code == UV_EPERM)) {
-        ThrowException(env, code, "uv_fs_rename", NULL, dst_path);
+        ThrowException(env, code, "rename", NULL, dst_path);
       } else {
-        ThrowException(env, code, "uv_fs_rename", NULL, src_path);
+        ThrowException(env, code, "rename", NULL, src_path);
       }
     }
   }
@@ -1005,14 +1012,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1fsync
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("fsync", cb, callback, fd, NULL, context);
     r = uv_fs_fsync(cb->loop(), req, fd, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_fsync(cb->loop(), &req, fd, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_fsync");
+      ThrowException(env, uv_last_error(cb->loop()).code, "fsync");
     }
   }
   return r;
@@ -1032,14 +1039,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1fdatasync
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("fdatasync", cb, callback, fd, NULL, context);
     r = uv_fs_fdatasync(cb->loop(), req, fd, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_fdatasync(cb->loop(), &req, fd, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_fdatasync");
+      ThrowException(env, uv_last_error(cb->loop()).code, "fdatasync");
     }
   }
   return r;
@@ -1059,14 +1066,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1ftruncate
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("ftruncate", cb, callback, fd, NULL, context);
     r = uv_fs_ftruncate(cb->loop(), req, fd, offset, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_ftruncate(cb->loop(), &req, fd, offset, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_ftruncate");
+      ThrowException(env, uv_last_error(cb->loop()).code, "ftruncate");
     }
   }
   return r;
@@ -1086,14 +1093,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1sendfile
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, in_fd, NULL, context);
+    req->data = new FileRequest("sendfile", cb, callback, in_fd, NULL, context);
     r = uv_fs_sendfile(cb->loop(), req, out_fd, in_fd, offset, length, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_sendfile(cb->loop(), &req, out_fd, in_fd, offset, length, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_sendfile");
+      ThrowException(env, uv_last_error(cb->loop()).code, "sendfile");
     }
   }
   return r;
@@ -1114,14 +1121,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1chmod
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("chmod", cb, callback, 0, path, context);
     r = uv_fs_chmod(cb->loop(), req, cpath, mode, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_chmod(cb->loop(), &req, cpath, mode, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_chmod", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "chmod", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -1143,14 +1150,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1utime
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("utime", cb, callback, 0, path, context);
     r = uv_fs_utime(cb->loop(), req, cpath, atime, mtime, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_utime(cb->loop(), &req, cpath, atime, mtime, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_utime", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "utime", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -1171,14 +1178,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1futime
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("futime", cb, callback, fd, NULL, context);
     r = uv_fs_futime(cb->loop(), req, fd, atime, mtime, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_futime(cb->loop(), &req, fd, atime, mtime, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_futime");
+      ThrowException(env, uv_last_error(cb->loop()).code, "futime");
     }
   }
   return r;
@@ -1199,7 +1206,7 @@ JNIEXPORT jobject JNICALL Java_com_oracle_libuv_Files__1lstat
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("lstat", cb, callback, 0, path, context);
     uv_fs_lstat(cb->loop(), req, cpath, _fs_cb);
   } else {
     uv_fs_t req;
@@ -1207,7 +1214,7 @@ JNIEXPORT jobject JNICALL Java_com_oracle_libuv_Files__1lstat
     stats = Stats::create(env, static_cast<uv_statbuf_t*>(req.ptr));
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_lstat", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "lstat", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -1230,7 +1237,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1link
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, new_path, context);
+    req->data = new FileRequest("link", cb, callback, 0, new_path, context);
     r = uv_fs_link(cb->loop(), req, src_path, dst_path, _fs_cb);
   } else {
     uv_fs_t req;
@@ -1240,9 +1247,9 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1link
       int code = uv_last_error(cb->loop()).code;
       if (dst_path != NULL &&
          (code == UV_EEXIST || code == UV_ENOTEMPTY || code == UV_EPERM)) {
-        ThrowException(env, code, "uv_fs_link", NULL, dst_path);
+        ThrowException(env, code, "link", NULL, dst_path);
       } else {
-        ThrowException(env, code, "uv_fs_link", NULL, src_path);
+        ThrowException(env, code, "link", NULL, src_path);
       }
     }
   }
@@ -1267,14 +1274,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1symlink
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("symlink", cb, callback, 0, path, context);
     r = uv_fs_symlink(cb->loop(), req, src_path, dst_path, flags, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_symlink(cb->loop(), &req, src_path, dst_path, flags, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_symlink", NULL, src_path);
+      ThrowException(env, uv_last_error(cb->loop()).code, "symlink", NULL, src_path);
     }
   }
   env->ReleaseStringUTFChars(path, src_path);
@@ -1297,7 +1304,7 @@ JNIEXPORT jstring JNICALL Java_com_oracle_libuv_Files__1readlink
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("readlink", cb, callback, 0, path, context);
     uv_fs_readlink(cb->loop(), req, cpath, _fs_cb);
   } else {
     uv_fs_t req;
@@ -1305,7 +1312,7 @@ JNIEXPORT jstring JNICALL Java_com_oracle_libuv_Files__1readlink
     link = env->NewStringUTF(static_cast<char*>(req.ptr));
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_readlink", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "readlink", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -1326,14 +1333,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1fchmod
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("fchmod", cb, callback, fd, NULL, context);
     r = uv_fs_fchmod(cb->loop(), req, fd, mode, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_fchmod(cb->loop(), &req, fd, mode, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_fchmod");
+      ThrowException(env, uv_last_error(cb->loop()).code, "fchmod");
     }
   }
   return r;
@@ -1354,14 +1361,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1chown
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, 0, path, context);
+    req->data = new FileRequest("chown", cb, callback, 0, path, context);
     r = uv_fs_chown(cb->loop(), req, cpath, (uv_uid_t) uid, (uv_gid_t) gid, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_chown(cb->loop(), &req, cpath, (uv_uid_t) uid, (uv_gid_t) gid, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_chown", NULL, cpath);
+      ThrowException(env, uv_last_error(cb->loop()).code, "chown", NULL, cpath);
     }
   }
   env->ReleaseStringUTFChars(path, cpath);
@@ -1382,14 +1389,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_Files__1fchown
 
   if (callback) {
     uv_fs_t* req = new uv_fs_t();
-    req->data = new FileRequest(cb, callback, fd, NULL, context);
+    req->data = new FileRequest("fchown", cb, callback, fd, NULL, context);
     r = uv_fs_fchown(cb->loop(), req, fd, (uv_uid_t) uid, (uv_gid_t) gid, _fs_cb);
   } else {
     uv_fs_t req;
     r = uv_fs_fchown(cb->loop(), &req, fd, (uv_uid_t) uid, (uv_gid_t) gid, NULL);
     uv_fs_req_cleanup(&req);
     if (r < 0) {
-      ThrowException(env, uv_last_error(cb->loop()).code, "uv_fs_fchown");
+      ThrowException(env, uv_last_error(cb->loop()).code, "fchown");
     }
   }
   return r;
