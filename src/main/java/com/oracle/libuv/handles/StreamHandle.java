@@ -127,7 +127,7 @@ class StreamHandle extends Handle {
 
     public int write(final ConsString cs) {
         try {
-            return write(cs.toString(), "utf-8");
+            return write(cs, "utf-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // "utf-8" is always supported
         }
