@@ -54,7 +54,7 @@
         </copy>
     </target>
 
-    <target name="configure-unix" depends="config-gyp" if="isLinux">
+    <target name="configure-unix" depends="config-gyp" if="isUnix">
         <exec executable="python" dir="." failonerror="true">
             <arg value="${source.home}/tools/gyp/gyp_main.py"/>
             <arg value="--depth=."/>
@@ -100,7 +100,14 @@
         </exec>
     </target>
 
-    <target name="jar" depends="setup, compile, make, shlib-linux, shlib-macos, shlib-windows">
+    <target name="make-solaris" if="isSolaris" unless="product.lib.uptodate">
+        <exec executable="gmake" failonerror="true">
+            <arg value="builddir_name=out"/>
+            <arg value="libuv-java"/>
+        </exec>
+    </target>
+
+    <target name="jar" depends="setup, compile, make, shlib-linux, shlib-solaris, shlib-macos, shlib-windows">
         <property name="product.jar" value="${dist.dir}/${product.name}.jar"/>
         <jar basedir="${classes.dir}" destfile="${product.jar}"/>
     </target>

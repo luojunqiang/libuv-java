@@ -8,6 +8,22 @@
         'SRC%': './out/<(target)/obj.target',
     },
     'target_defaults': {
+      'conditions': [
+        ['OS != "win"', {
+          'defines': [
+            '_LARGEFILE_SOURCE',
+            '_FILE_OFFSET_BITS=64',
+            '_GNU_SOURCE',
+          ],
+          'cflags': [
+            '-pedantic',
+            '-Wall',
+            '-Wextra',
+            '-Wno-unused-parameter',
+          ],
+        }],
+      ],
+
         'default_configuration': '<(target)',
         'configurations': {
             'Debug': {
@@ -101,6 +117,61 @@
                     ],
                     'include_dirs': [
                         '<(JAVA_HOME)/include/linux',
+                    ],
+                }],
+                ['OS == "solaris"', {
+                    'sources': [
+                        'async.cpp',
+                        'check.cpp',
+                        'child_process.cpp',
+                        'constants.cpp',
+                        'context.cpp',
+                        'exception.cpp',
+                        'file.cpp',
+                        'file_event.cpp',
+                        'file_poll.cpp',
+                        'handle.cpp',
+                        'idle.cpp',
+                        'loop.cpp',
+                        'misc.cpp',
+                        'os.cpp',
+                        'pipe.cpp',
+                        'poll.cpp',
+                        'process.cpp',
+                        'signal.cpp',
+                        'stats.cpp',
+                        'stream.cpp',
+                        'timer.cpp',
+                        'tcp.cpp',
+                        'tty.cpp',
+                        'udp.cpp',
+                    ],
+                    'libraries': [
+                        '-lm',
+                        '-lkstat',
+                        '-lnsl',
+                        '-lsendfile',
+                        '-lsocket',
+                    ],
+                    'defines': [
+                        '__POSIX__',
+                        '__EXTENSIONS__',
+                        '_XOPEN_SOURCE=500',
+                    ],
+                    'cflags': [
+                        '-fPIC',
+                        '-fno-omit-frame-pointer',
+                        '-m64',
+                    ],
+                    'ldflags': [
+                        '-pthreads',
+                        '-m64',
+                    ],
+                    'include_dirs': [
+                        '<(JAVA_HOME)/include/solaris',
+                    ],
+                    'dependencies': [
+                        '<(LIBUV_HOME)/uv.gyp:libuv',
                     ],
                 }],
                 ['OS == "mac"', {
