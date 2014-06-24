@@ -34,12 +34,10 @@ import jdk.nashorn.internal.runtime.ConsString;
 
 public final class StringUtils {
 
-    private static Method leftMethod = null;
-    private static Method rightMethod = null;
+    private static Method getComponentsMethod = null;
     static {
         try {
-            leftMethod = ConsString.class.getDeclaredMethod("left");
-            rightMethod = ConsString.class.getDeclaredMethod("right");
+            getComponentsMethod = ConsString.class.getDeclaredMethod("getComponents");
         } catch (NoSuchMethodException ignore) {
         }
     }
@@ -58,7 +56,7 @@ public final class StringUtils {
     }
 
     public static boolean consStringHasLeftRight() {
-        return leftMethod != null && rightMethod != null;
+        return getComponentsMethod != null;
     }
 
     private static Deque<String> fallbackParts(final ConsString root, final Deque<String> parts) {
@@ -70,11 +68,13 @@ public final class StringUtils {
     public static Deque<String> reflectiveParts(final Deque<String> parts, final ConsString root)
             throws InvocationTargetException, IllegalAccessException {
 
-        assert leftMethod != null;
-        assert rightMethod != null;
+        assert getComponentsMethod != null;
+        final CharSequence[] rootParts = (CharSequence[]) getComponentsMethod.invoke(root);
+        assert rootParts != null;
+        assert rootParts.length == 2;
 
-        final CharSequence left = (CharSequence) leftMethod.invoke(root);
-        final CharSequence right = (CharSequence) rightMethod.invoke(root);
+        final CharSequence left = rootParts[0];
+        final CharSequence right = rootParts[1];
         final Deque<CharSequence> stack = new ArrayDeque<>();
 
         stack.addFirst(left);
@@ -84,8 +84,11 @@ public final class StringUtils {
         do {
             if (cs instanceof ConsString) {
                 final ConsString cons = (ConsString) cs;
-                stack.addFirst((CharSequence) leftMethod.invoke(cons));
-                cs = (CharSequence) rightMethod.invoke(cons);
+                final CharSequence[] consParts = (CharSequence[]) getComponentsMethod.invoke(cons);
+                assert consParts != null;
+                assert consParts.length == 2;
+                stack.addFirst(consParts[0]); // left
+                cs = consParts[1]; // right
             } else {
                 final String str = (String) cs;
                 if (str.length() > 0) {
