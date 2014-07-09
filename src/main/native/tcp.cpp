@@ -185,14 +185,14 @@ JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_TCPHandle__1connect6
 /*
  * Class:     com_oracle_libuv_handles_TCPHandle
  * Method:    _open
- * Signature: (JLjava/lang/String;I)I
+ * Signature: (JJ)I
  */
 JNIEXPORT jint JNICALL Java_com_oracle_libuv_handles_TCPHandle__1open
-  (JNIEnv *env, jobject that, jlong tcp, jint fd) {
+  (JNIEnv *env, jobject that, jlong tcp, jlong socket) {
 
   assert(tcp);
   uv_tcp_t* handle = reinterpret_cast<uv_tcp_t*>(tcp);
-  int r = uv_tcp_open(handle, fd);
+  int r = uv_tcp_open(handle, (uv_os_sock_t) socket);
   if (r) {
     ThrowException(env, handle->loop, "uv_tcp_open");
   }

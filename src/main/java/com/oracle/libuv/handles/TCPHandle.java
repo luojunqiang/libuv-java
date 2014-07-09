@@ -105,8 +105,8 @@ public class TCPHandle extends StreamHandle {
         return _peer_name(pointer);
     }
 
-    public int open(final int fd) {
-        return _open(pointer, fd);
+    public int open(final long socket) {
+        return _open(pointer, socket);
     }
 
     public int setNoDelay(final boolean enable) {
@@ -124,8 +124,6 @@ public class TCPHandle extends StreamHandle {
 
     private static native long _new(final long loop);
 
-    private static native long _new(final long loop, final int fd);
-
     private static native long _new(final long loop, final long socket);
 
     private native int _bind(final long ptr, final String address, final int port);
@@ -136,7 +134,7 @@ public class TCPHandle extends StreamHandle {
 
     private native int _connect6(final long ptr, final String address, final int port, final Object context);
 
-    private native int _open(final long ptr, final int fd);
+    private native int _open(final long ptr, final long socket);
 
     private native Address _socket_name(final long ptr);
 
