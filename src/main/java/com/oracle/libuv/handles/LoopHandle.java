@@ -167,6 +167,10 @@ public class LoopHandle implements Closeable {
         return _get_last_error(pointer);
     }
 
+    public void setLastError(int code) {
+        _set_last_error(pointer, code);
+    }
+
     public String[] list() {
         return _list(pointer);
     }
@@ -205,4 +209,6 @@ public class LoopHandle implements Closeable {
     private native String[] _list(final long ptr);
 
     private native NativeException _get_last_error(final long ptr);
+
+    private native void _set_last_error(final long ptr, final int code);
 }
