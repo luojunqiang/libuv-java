@@ -41,6 +41,18 @@ public class TimerHandleTest extends TestBase {
     private static final int TIMES = 100;
 
     @Test
+    public void testNow() throws Throwable {
+        final HandleFactory handleFactory = newFactory();
+        final LoopHandle loop = handleFactory.getLoopHandle();
+        final TimerHandle timer = handleFactory.newTimerHandle();
+
+        final long now = timer.now(loop);
+        Assert.assertTrue(now > 0);
+        Thread.sleep(1);
+        Assert.assertTrue(timer.now(loop) > now);
+    }
+
+    @Test
     public void testOnce() throws Throwable {
         final AtomicBoolean gotCallback = new AtomicBoolean(false);
         final AtomicBoolean gotClose = new AtomicBoolean(false);

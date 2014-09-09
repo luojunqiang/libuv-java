@@ -25,6 +25,7 @@
 
 package com.oracle.libuv;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -47,6 +48,31 @@ public class TestBase {
             Arrays.fill(data, b);
             buffer.clear();
             buffer.put(data);
+        }
+    }
+
+    protected static byte[] getBytes(final ByteBuffer data) {
+        byte[] bytes;
+        if (data.hasArray()) {
+            bytes = data.array();
+        } else {
+            bytes = new byte[data.limit() - data.position()];
+            data.get(bytes);
+        }
+        return bytes;
+    }
+
+    protected static String stringify(final ByteBuffer data) {
+        return stringify(data, null);
+    }
+
+    protected static String stringify(final ByteBuffer data, final String quote) {
+        final byte[] bytes = getBytes(data);
+        try {
+            final String s = new String(bytes, "utf-8");
+            return quote == null ? s : quote + s + quote;
+        } catch (final UnsupportedEncodingException ignore) {
+            return null;
         }
     }
 

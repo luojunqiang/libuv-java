@@ -168,6 +168,20 @@ JNIEXPORT void JNICALL Java_com_oracle_libuv_handles_TimerHandle__1initialize
 
 /*
  * Class:     com_oracle_libuv_handles_TimerHandle
+ * Method:    _now
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_oracle_libuv_handles_TimerHandle__1now
+  (JNIEnv *env, jclass cls, jlong loop) {
+
+  assert(loop);
+  uv_loop_t* lp = reinterpret_cast<uv_loop_t*>(loop);
+  uv_update_time(lp);
+  return uv_now(lp);
+}
+
+/*
+ * Class:     com_oracle_libuv_handles_TimerHandle
  * Method:    _start
  * Signature: (JJJ)I
  */

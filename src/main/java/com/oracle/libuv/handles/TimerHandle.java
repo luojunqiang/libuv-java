@@ -51,6 +51,10 @@ public class TimerHandle extends Handle {
         _initialize(pointer);
     }
 
+    public static long now(final LoopHandle loop) {
+        return _now(loop.pointer());
+    }
+
     public int start(final long timeout, final long repeat) {
         return _start(pointer, timeout, repeat);
     }
@@ -93,6 +97,8 @@ public class TimerHandle extends Handle {
     }
 
     private static native long _new(final long loop);
+
+    private static native long _now(final long loop);
 
     private static native void _static_initialize();
 
